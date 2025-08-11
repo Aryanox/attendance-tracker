@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Attendance Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Base Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Light Mode */
+        :root {
+            --bg-color: #f9fafb; /* gray-50 */
+            --text-color: #1f2937; /* gray-800 */
+            --card-bg: #ffffff;
+            --header-text: #111827; /* gray-900 */
+            --muted-text: #4b5563; /* gray-600 */
+            --table-header-bg: #f3f4f6; /* gray-100 */
+            --table-border: #e5e7eb; /* gray-200 */
+            --weekend-bg: #f3f4f6; /* gray-100 */
+        }
+
+        /* Dark Mode */
+        .dark {
+            --bg-color: #111827; /* gray-900 */
+            --text-color: #d1d5db; /* gray-300 */
+            --card-bg: #1f2937; /* gray-800 */
+            --header-text: #f9fafb; /* gray-50 */
+            --muted-text: #9ca3af; /* gray-400 */
+            --table-header-bg: #374151; /* gray-700 */
+            --table-border: #4b5563; /* gray-600 */
+            --weekend-bg: #1f2937; /* gray-800 */
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .dark .card {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -2px rgb(0 0 0 / 0.2);
+        }
+
+        h1, h2 { color: var(--header-text); }
+        p, label, select { color: var(--muted-text); }
+        .dark select { background-color: #374151; color: var(--text-color); border-color: #4b5563;}
+
+        #attendance-table thead, #summary-table thead { background-color: var(--table-header-bg); }
+        #attendance-table, #attendance-table tbody, #summary-table, #summary-body { border-color: var(--table-border); divide-color: var(--table-border); }
+        .weekend-row { background-color: var(--weekend-bg); }
+
+        .table-cell-subject {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 2px solid transparent;
+            height: 70px; /* Fixed height for cells */
+        }
+
+        /* Status Styles */
+        .attended {
+            background-color: #D1FAE5 !important; /* Green-200 */
+            color: #065F46 !important; /* Green-800 */
+            border-color: #6EE7B7 !important; /* Green-300 */
+        }
+        .dark .attended {
+            background-color: #064E3B !important; /* Green-900 */
+            color: #A7F3D0 !important; /* Green-200 */
+            border-color: #34D399 !important; /* Green-400 */
+        }
+
+        .missed {
+            background-color: #FEE2E2 !important; /* Red-200 */
+            color: #991B1B !important; /* Red-800 */
+            border-color: #FCA5A5 !important; /* Red-300 */
+        }
+        .dark .missed {
+            background-color: #7F1D1D !important; /* Red-900 */
+            color: #FECACA !important; /* Red-200 */
+            border-color: #F87171 !important; /* Red-400 */
+        }
+
+        .not-applicable {
+            background-color: var(--weekend-bg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold">Monthly Attendance Tracker</h1>
+            <p class="text-lg mt-2">CGC-J |Session: 2025-26|</p>
+        </header>
+
+        <!-- Controls -->
+        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 card p-4 rounded-lg">
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <label for="month-select" class="font-semibold">Month:</label>
+                <select id="month-select" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+                <label for="year-select" class="font-semibold">Year:</label>
+                <select id="year-select" class="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"></select>
+            </div>
+            <div class="flex items-center space-x-4 mt-4 sm:mt-0">
+                <!-- Theme Toggle -->
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                    <label for="theme-toggle" class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" value="" id="theme-toggle" class="sr-only peer">
+                        <div class="w-11 h-6 bg-gray-200 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                    </label>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+                </div>
+                <button id="reset-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Reset</button>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto card rounded-lg">
+            <table id="attendance-table" class="min-w-full divide-y">
+                <thead></thead>
+                <tbody class="divide-y"></tbody>
+            </table>
+        </div>
+
+        <div class="mt-10">
+            <h2 class="text-2xl font-bold text-center mb-6">Attendance Summary</h2>
+            <div class="overflow-x-auto card p-4 rounded-lg">
+                <table id="summary-table" class="min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="font-semibold px-4 py-2 text-left">Subject</th>
+                            <th class="font-semibold px-4 py-2">Total</th>
+                            <th class="font-semibold px-4 py-2 text-green-600 dark:text-green-400">Attended</th>
+                            <th class="font-semibold px-4 py-2 text-red-600 dark:text-red-400">Missed</th>
+                            <th class="font-semibold px-4 py-2 text-blue-600 dark:text-blue-400">Attendance %</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summary-body" class="divide-y"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Timetable effective from 04-08-2025
+        const timetableWeek1 = { 1: ["EGD", "Engg Maths I", "BEE", "Engg Physics", "MMP (Group G)"], 2: ["BEE", "Engg Maths I", "Engg Physics", "MPD", "EGD"], 3: ["Physics Lab (Group G)", "Engg Maths I", "BEE", "Engg Physics"], 4: ["BEE", "Engg Physics", "Physics Lab (Group H)", "Engg Maths I", "MMP (Group H)"], 5: ["Engg Maths I", "MPD", "Engg Physics", "BEE"], 6: [], 0: [] };
+        // Timetable effective from 11-08-2025
+        const timetableWeek2 = { 1: ["EGD", "Engg Maths I", "BEE", "Engg Physics", "ESL", "MMP"], 2: ["BEE", "Engg Maths I", "Engg Physics", "MPD", "EGD"], 3: ["Physics Lab (Group G)", "Engg Maths I", "BEE", "Engg Physics", "Value Added Course", "MMP (Group H)"], 4: ["BEE", "Engg Physics", "Physics Lab (Group H)", "Engg Maths I", "ESL", "Value Added Course"], 5: ["Engg Maths I", "MPD", "Engg Physics", "BEE"], 6: [], 0: [] };
+        
+        const allSubjects = [...new Set([...Object.values(timetableWeek1).flat(), ...Object.values(timetableWeek2).flat()])].sort();
+        
+        const checkIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+        const crossIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;
+
+        let currentYear, currentMonth;
+        let attendanceData = {};
+
+        const monthSelect = document.getElementById('month-select');
+        const yearSelect = document.getElementById('year-select');
+        const resetButton = document.getElementById('reset-button');
+        const themeToggle = document.getElementById('theme-toggle');
+
+        function getTimetableForDate(date) {
+            const effectiveDateWeek2 = new Date('2025-08-11T00:00:00');
+            const checkDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            return checkDate < effectiveDateWeek2 ? timetableWeek1 : timetableWeek2;
+        }
+
+        function initializeDate() {
+            const effectiveDate = new Date('2025-08-04');
+            currentYear = effectiveDate.getFullYear();
+            currentMonth = effectiveDate.getMonth();
+        }
+
+        function populateDateSelectors() {
+            const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            monthSelect.innerHTML = months.map((month, index) => `<option value="${index}" ${index === currentMonth ? 'selected' : ''}>${month}</option>`).join('');
+            yearSelect.innerHTML = '';
+            for (let year = 2024; year <= 2030; year++) yearSelect.innerHTML += `<option value="${year}" ${year === currentYear ? 'selected' : ''}>${year}</option>`;
+        }
+
+        function loadAttendanceData() {
+            const key = `attendance_${currentYear}_${currentMonth}`;
+            attendanceData = JSON.parse(localStorage.getItem(key) || '{}');
+        }
+
+        function saveAttendanceData() {
+            const key = `attendance_${currentYear}_${currentMonth}`;
+            localStorage.setItem(key, JSON.stringify(attendanceData));
+        }
+
+        function renderTable() {
+            loadAttendanceData();
+            const table = document.getElementById('attendance-table');
+            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const maxClasses = Math.max(...Object.values(timetableWeek1).map(d => d.length), ...Object.values(timetableWeek2).map(d => d.length));
+
+            let headerHTML = '<tr><th class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">Date</th>';
+            for (let i = 1; i <= maxClasses; i++) headerHTML += `<th class="px-6 py-3 text-center text-xs font-medium uppercase tracking-wider">Class ${i}</th>`;
+            headerHTML += '</tr>';
+            table.querySelector('thead').innerHTML = headerHTML;
+
+            let bodyHTML = '';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dayOfWeek = date.getDay();
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                const currentTimetable = getTimetableForDate(date);
+                const dayClasses = currentTimetable[dayOfWeek] || [];
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+                bodyHTML += `<tr class="${isWeekend ? 'weekend-row' : ''}">`;
+                bodyHTML += `<td class="px-6 py-4 whitespace-nowrap font-medium">${date.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit' })}</td>`;
+
+                for (let i = 0; i < maxClasses; i++) {
+                    const subject = dayClasses[i];
+                    if (subject) {
+                        const status = attendanceData[dateString]?.[subject] || 'none';
+                        let cellClass = '';
+                        let iconHTML = '<div class="h-6 w-6"></div>';
+                        if (status === 'attended') {
+                            cellClass = 'attended';
+                            iconHTML = checkIcon;
+                        } else if (status === 'missed') {
+                            cellClass = 'missed';
+                            iconHTML = crossIcon;
+                        }
+                        
+                        bodyHTML += `<td class="p-1 text-center align-middle table-cell-subject ${cellClass}" data-date="${dateString}" data-subject="${subject}">
+                            <div class="flex flex-col items-center justify-center h-full">
+                                <span class="font-semibold text-sm">${subject}</span>
+                                ${iconHTML}
+                            </div>
+                        </td>`;
+                    } else {
+                        bodyHTML += '<td class="p-1 text-center align-middle not-applicable"></td>';
+                    }
+                }
+                bodyHTML += '</tr>';
+            }
+            table.querySelector('tbody').innerHTML = bodyHTML;
+            updateSummary();
+        }
+
+        function handleCellClick(e) {
+            const cell = e.target.closest('.table-cell-subject');
+            if (!cell) return;
+
+            const { date, subject } = cell.dataset;
+            if (!attendanceData[date]) attendanceData[date] = {};
+
+            const currentStatus = attendanceData[date][subject];
+            let nextStatus = 'attended';
+            if (currentStatus === 'attended') nextStatus = 'missed';
+            else if (currentStatus === 'missed') nextStatus = 'none';
+            
+            if (nextStatus === 'none') delete attendanceData[date][subject];
+            else attendanceData[date][subject] = nextStatus;
+
+            saveAttendanceData();
+            renderTable();
+        }
+
+        function updateSummary() {
+            const summary = allSubjects.reduce((acc, subject) => ({ ...acc, [subject]: { total: 0, attended: 0, missed: 0 } }), {});
+
+            for (let day = 1; day <= new Date(currentYear, currentMonth + 1, 0).getDate(); day++) {
+                const date = new Date(currentYear, currentMonth, day);
+                const dateString = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayClasses = getTimetableForDate(date)[date.getDay()] || [];
+
+                dayClasses.forEach(subject => {
+                    summary[subject].total++;
+                    const status = attendanceData[dateString]?.[subject];
+                    if (status === 'attended') summary[subject].attended++;
+                    else if (status === 'missed') summary[subject].missed++;
+                });
+            }
+
+            const summaryBody = document.getElementById('summary-body');
+            summaryBody.innerHTML = '';
+            for (const subject of allSubjects) {
+                const data = summary[subject];
+                if (data.total === 0) continue;
+                const percentage = data.total > 0 ? ((data.attended / data.total) * 100).toFixed(1) : '0.0';
+                let percentageClass = parseFloat(percentage) >= 75 ? 'text-green-500 font-bold' : (data.total > 0 ? 'text-red-500 font-bold' : '');
+                summaryBody.innerHTML += `<tr>
+                    <td class="font-medium text-left px-4 py-2">${subject}</td>
+                    <td class="px-4 py-2">${data.total}</td>
+                    <td class="px-4 py-2 font-semibold text-green-600 dark:text-green-400">${data.attended}</td>
+                    <td class="px-4 py-2 font-semibold text-red-600 dark:text-red-400">${data.missed}</td>
+                    <td class="px-4 py-2 ${percentageClass}">${percentage}%</td>
+                </tr>`;
+            }
+        }
+
+        function handleDateChange() {
+            currentMonth = parseInt(monthSelect.value);
+            currentYear = parseInt(yearSelect.value);
+            renderTable();
+        }
+
+        function handleReset() {
+            if (window.confirm("Are you sure you want to delete all attendance data for the current month? This cannot be undone.")) {
+                localStorage.removeItem(`attendance_${currentYear}_${currentMonth}`);
+                renderTable();
+            }
+        }
+
+        function setupTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                themeToggle.checked = true;
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeToggle.checked = false;
+            }
+            themeToggle.addEventListener('change', () => {
+                if (themeToggle.checked) {
+                    document.documentElement.classList.add('dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
+
+        // --- Initial Load ---
+        document.getElementById('attendance-table').addEventListener('click', handleCellClick);
+        monthSelect.addEventListener('change', handleDateChange);
+        yearSelect.addEventListener('change', handleDateChange);
+        resetButton.addEventListener('click', handleReset);
+        
+        initializeDate();
+        populateDateSelectors();
+        setupTheme();
+        renderTable();
+    </script>
+</body>
+</html>
